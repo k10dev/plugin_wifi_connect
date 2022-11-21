@@ -127,16 +127,23 @@ public class SwiftPluginWifiConnectPlugin: NSObject, FlutterPlugin {
     return true
   }
 
-  private func getSSID() -> String? {
-    var ssid: String?
-    if let interfaces = CNCopySupportedInterfaces() as NSArray? {
-      for interface in interfaces {
-        if let interfaceInfo = CNCopyCurrentNetworkInfo(interface as! CFString) as NSDictionary? {
-          ssid = interfaceInfo[kCNNetworkInfoKeySSID as String] as? String
-          break
+    private func getSSID() -> String? {
+        var ssid: String?
+        if #available(iOS 14.0, *) {
+            NEHotspotNetwork.fetchCurrent(completionHandler: { currentNetwork in
+                ssid = currentNetwork?.ssid
+            })
         }
-      }
+        if(ssid == nil){
+            if let interfaces = CNCopySupportedInterfaces() as NSArray? {
+                for interface in interfaces {
+                    if let interfaceInfo = CNCopyCurrentNetworkInfo(interface as! CFString) as NSDictionary? {
+                        ssid = interfaceInfo[kCNNetworkInfoKeySSID as String] as? String
+                        break
+                    }
+                }
+            }
+        }
+        return ssid
     }
-    return ssid
-  }
 }
