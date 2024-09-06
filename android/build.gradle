@@ -41,8 +41,10 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 21
     }
+
+    namespace 'com.peakysoftware.plugin_wifi_connect'
 }
 
 /*dependencies {
