@@ -14,11 +14,13 @@ public class SwiftPluginWifiConnectPlugin: NSObject, FlutterPlugin {
     do {
       switch (call.method) {
         case "disconnect":
-          result(disconnect())
+          disconnect(result: result)
           return
 
         case "getSSID":
-          result(getSSID())
+          getSSID { (sSSID) in
+            result(sSSID)
+          }
           return
 
         case "connect":
@@ -120,40 +122,45 @@ public class SwiftPluginWifiConnectPlugin: NSObject, FlutterPlugin {
         result(false)
         return
       }
-      if let currentSsid = this.getSSID() {
-        result(currentSsid.hasPrefix(hotspotConfig.ssid))
-        return
+
+      this.getSSID { (ssid) in
+          if let currentSsid = ssid {
+              result(currentSsid.hasPrefix(hotspotConfig.ssid))
+          } else {
+              result(false)
+          }
       }
-      result(false)
     }
   }
 
-  @available(iOS 11, *)   
-  private func disconnect() -> Bool {
-    let ssid: String? = getSSID()
-    if(ssid == nil){
-      return false
-    }
-    NEHotspotConfigurationManager.shared.removeConfiguration(forSSID: ssid ?? "")
-    return true
+  @available(iOS 11, *)  
+  private func disconnect(result: @escaping FlutterResult) {
+      getSSID { (ssid) in
+          if (ssid != nil) {
+              NEHotspotConfigurationManager.shared.removeConfiguration(forSSID: ssid ?? "")
+              result(true)
+          } else {
+              result(false)
+          }
+      }
   }
 
-    private func getSSID() -> String? {
-        var ssid: String?
-        if #available(iOS 14.0, *) {
-            NEHotspotNetwork.fetchCurrent(completionHandler: { currentNetwork in
-                ssid = currentNetwork?.ssid
-            })
-        } else {
-            if let interfaces = CNCopySupportedInterfaces() as NSArray? {
-                for interface in interfaces {
-                    if let interfaceInfo = CNCopyCurrentNetworkInfo(interface as! CFString) as NSDictionary? {
-                        ssid = interfaceInfo[kCNNetworkInfoKeySSID as String] as? String
-                        break
-                    }
+  private func getSSID(result: @escaping (String?) -> ()) {
+    if #available(iOS 14.0, *) {
+        NEHotspotNetwork.fetchCurrent(completionHandler: { currentNetwork in
+            result(currentNetwork?.ssid);
+        })
+    } else {
+        if let interfaces = CNCopySupportedInterfaces() as NSArray? {
+            for interface in interfaces {
+                if let interfaceInfo = CNCopyCurrentNetworkInfo(interface as! CFString) as NSDictionary? {
+                    result(interfaceInfo[kCNNetworkInfoKeySSID as String] as? String)
+                    return
                 }
             }
         }
-        return ssid
+        result(nil)
     }
+  }
+
 }
