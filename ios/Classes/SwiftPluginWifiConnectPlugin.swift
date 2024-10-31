@@ -123,12 +123,14 @@ public class SwiftPluginWifiConnectPlugin: NSObject, FlutterPlugin {
         return
       }
 
-      this.getSSID { (ssid) in
+      DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+        this.getSSID { (ssid) in
           if let currentSsid = ssid {
-              result(currentSsid.hasPrefix(hotspotConfig.ssid))
+            result(currentSsid.hasPrefix(hotspotConfig.ssid))
           } else {
-              result(false)
+            result(false)
           }
+        }
       }
     }
   }
